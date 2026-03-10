@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HRMS{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+  
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    {% if user.is_authenticated %}
+        {% if user.role == 'admin' or user.role == 'employee' %}
+            {% include 'navbar/admin_employee.html' %}
+        {% endif %}
+    {% endif %}
+
+    <div class="app-container">
+        {% if user.is_authenticated %}
+        <aside class="sidebar">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a href="{% url 'employee_dashboard' %}" class="nav-link">
+                        <i class="bi bi-grid-1x2-fill"></i> <span class="link-text">Dashboard</span>
+                    </a>
+                </li>
+
+                {% if user.role == 'admin' %}
+                    <div class="sidebar-heading">Admin</div>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"><i class="bi bi-people-fill"></i> <span class="link-text">User Directory</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"><i class="bi bi-chat-left-dots-fill"></i> <span class="link-text">Leave Inquiries</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"><i class="bi bi-bar-chart-line-fill"></i> <span class="link-text">Analytics</span></a>
+                    </li>
+
+                {% elif user.role == 'employee' %}
+                    <div class="sidebar-heading">Employee</div>
+                    <li class="nav-item">
+                        <a href="{% url 'profile' %}" class="nav-link"><i class="bi bi-person-circle"></i> <span class="link-text">My Profile</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"><i class="bi bi-calendar-plus"></i> <span class="link-text">Request Leave</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link"><i class="bi bi-building-fill"></i> <span class="link-text">My Department</span></a>
+                    </li>
+                {% endif %}
+
+                <li class="nav-item mt-auto">
+                    <a href="{% url 'logout' %}" class="nav-link text-danger">
+                        <i class="bi bi-box-arrow-right"></i> <span class="link-text">Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        {% endif %}
+
+        <main class="dashboard-wrapper">
+            <div class="container-fluid">
+                
+                <div class="mb-3">
+                    <h2 class="welcome-text">{% block page_subtitle %}{% endblock %}</h2>
+                </div>
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

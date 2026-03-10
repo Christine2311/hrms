@@ -1,0 +1,87 @@
+/* ---------------------- */
+/* SIDEBAR STYLING - SCROLLABLE */
+/* ---------------------- */
+.sidebar {
+    width: 80px;
+    background-color: #ffffff;
+    position: fixed;
+    top: 70px;   /* aligns with navbar */
+    left: 0;
+    height: calc(100vh - 70px);
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+    border-right: 1px solid #e0e0e0;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Expand on hover */
+.sidebar:hover {
+    width: 260px;
+    box-shadow: 10px 0 20px rgba(0,0,0,0.05);
+}
+
+/* Hide text when retracted */
+.link-text, .brand-text, .sidebar-heading {
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    margin-left: 10px;
+}
+
+/* Show text on hover */
+.sidebar:hover .link-text, 
+.sidebar:hover .brand-text, 
+.sidebar:hover .sidebar-heading {
+    opacity: 1;
+}
+
+/* NAV LINKS */
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 15px 28px !important;
+    color: #555 !important;
+    text-decoration: none;
+}
+
+.nav-link i {
+    min-width: 25px;
+    font-size: 1.2rem;
+    color: #0095e8;
+}
+
+.nav-link:hover {
+    background-color: #f0f7ff;
+    color: #0095e8 !important;
+}
+
+/* Sidebar headings */
+.sidebar-heading {
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: #adb5bd;
+    padding: 20px 28px 5px;
+    text-transform: uppercase;
+}
+
+/* ---------------------- */
+/* MAIN CONTENT SHIFT */
+/* ---------------------- */
+.main-content {
+    margin-left: 80px; /* default retracted width */
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background-color: #f8f9fa;
+    min-height: 100vh;
+    padding-top: 20px;
+}
+
+/* Shift content when sidebar expands */
+.sidebar:hover ~ .main-content {
+    margin-left: 260px;
+}
+
+.sidebar:hover ~ .dashboard-wrapper {
+    margin-left: 260px;  /* match expanded sidebar width */
+}

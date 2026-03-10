@@ -1,0 +1,143 @@
+/* DASHBOARD SPACING - slide with sidebar */
+.dashboard-wrapper {
+    margin-left: 40px;   /* match sidebar default width */
+    padding: 20px;
+    transition: margin-left 0.3s ease, width 0.3s ease; /* slide smoothly */
+}
+
+
+
+/* INTRO TEXT */
+.welcome-text {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.intro-text {
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+/* GRID */
+.departments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px,1fr));
+    gap: 25px;
+}
+
+/* CARD */
+.dept-card {
+    border-radius: 18px;
+    border: none;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.dept-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+}
+
+/* ICON */
+.icon-box {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+/* LOCK ICON */
+.lock-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #777;
+}
+
+/* TITLE */
+.dept-title {
+    font-weight: 700;
+    font-size: 20px;
+    margin-top: 15px;
+}
+
+/* DESCRIPTION */
+.dept-desc {
+    color: #777;
+    font-size: 14px;
+}
+
+/* ACTIVE CARD */
+.active-dept {
+    border: 2px solid rgba(0,0,0,0.05);
+}
+
+/* LOCKED CARD */
+.locked-dept {
+    opacity: 0.85;
+}
+
+/* BUTTON LOCK */
+.btn-lock {
+    background: #e9ecef;
+    border: none;
+    color: #777;
+    font-weight: 600;
+}
+
+/* PASTEL COLOR THEMES */
+.card-blue { background: #f0f6ff !important; }
+.card-green { background: #f1fff6 !important; }
+.card-orange { background: #fff6f0 !important; }
+.card-purple { background: #f6f0ff !important; }
+
+/* ICON COLORS */
+.box-blue { background: #3b82f6; }
+.box-green { background: #10b981; }
+.box-orange { background: #f97316; }
+.box-purple { background: #8b5cf6; }
+
+/* BADGES */
+.badge-blue { background: #3b82f6; }
+.badge-green { background: #10b981; }
+.badge-orange { background: #f97316; }
+.badge-purple { background: #8b5cf6; }
+
+/* BUTTONS */
+.btn-blue { background: #3b82f6; border: none; color: white; }
+.btn-green { background: #10b981; border: none; color: white; }
+.btn-orange { background: #f97316; border: none; color: white; }
+.btn-purple { background: #8b5cf6; border: none; color: white; }
+
+.btn-blue:hover, .btn-green:hover, .btn-orange:hover, .btn-purple:hover {
+    opacity: 0.9;
+}
+
+.sidebar:hover ~ .dashboard-wrapper {
+    margin-left: 260px;  /* match expanded sidebar width */
+}
+
+/* ADD DEPARTMENT CARD STYLE */
+.border-dashed {
+    border: 2px dashed #3b82f6; /* blue dashed border */
+    border-radius: 18px;
+}
+
+.hover-scale {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-scale:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.1);
+}

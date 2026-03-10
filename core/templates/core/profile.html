@@ -1,0 +1,79 @@
+{% extends 'base.html' %} 
+
+{% block header_title %}Employee Profile{% endblock %}
+
+{% block content %}
+<main class="profile-page">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="dept-card active-dept mb-4 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="avatar avatar--large active mb-3" style="width: 120px; height: 120px; margin: 0 auto;">
+                            <img src="https://randomuser.me/api/portraits/men/11.jpg" class="rounded-circle img-fluid border border-4 border-white shadow" />
+                        </div>
+                        
+                        <h3 class="fw-bold">{{ user.first_name }} {{ user.last_name }}</h3>
+                        <p class="text-primary fw-bold">@{{ user.username }}</p>
+                        <span class="badge bg-light text-primary px-3 py-2 rounded-pill mb-3 border">
+                            {{ user.role|upper }}
+                        </span>
+
+                        {% if request.user == user %}
+                        <div class="mt-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                                <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="dept-card shadow-sm border-blue">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">About Me</h5>
+                        <p class="text-muted small">
+                            {{ user.bio|default:"No bio available. HR information for this employee is kept confidential and managed by the HRMS CORE system." }}
+                        </p>
+                        <hr>
+                        <div class="small">
+                            <p class="mb-1"><strong>Department:</strong> {{ user.department.name }}</p>
+                            <p class="mb-1"><strong>Joined:</strong> {{ user.date_joined|date:"M Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="roomList__header d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold m-0">Department Workspace</h4>
+                </div>
+
+                <div class="departments-grid mb-4">
+                    <div class="dept-card border-green shadow-sm">
+                        <div class="card-body">
+                            <h6>Assigned Tasks</h6>
+                            <h2 class="fw-bold text-success">12</h2>
+                            <small class="text-muted">4 pending review</small>
+                        </div>
+                    </div>
+                    <div class="dept-card border-purple shadow-sm">
+                        <div class="card-body">
+                            <h6>Leave Balance</h6>
+                            <h2 class="fw-bold text-purple">18 Days</h2>
+                            <small class="text-muted">Available this year</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dept-card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="fw-bold mb-3">Recent Activity</h5>
+                        {% include 'core/feed_component.html' %} 
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock content %}

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}EMPLOYEE DASHBOARD {% endblock %}
+
+{% block content %}
+
+<div class="dashboard-wrapper pt-5">
+
+
+   <!-- DASHBOARD INTRO -->
+<div class="dashboard-intro mb-5 p-4 rounded-4 shadow-sm bg-white border-start border-4 border-primary d-flex flex-column flex-md-row justify-content-between align-items-center">
+    
+    <!-- Left: Welcome text -->
+    <div class="mb-3 mb-md-0">
+        <h2 class="fw-bold text-dark mb-2">
+            Welcome back, {{ user.first_name }}! 
+        </h2>
+
+        <p class="text-muted fs-5 mb-1">
+            You are currently assigned to the 
+            <span class="text-primary fw-semibold">
+                {{ user.department.name }}
+            </span> department.
+        </p>
+
+        <p class="text-secondary fs-6">
+            Here's a quick glance at your departments and access status. 
+    </div>
+
+    <!-- Right: Icon or illustration -->
+    <div class="d-none d-md-block">
+        <i class="bi bi-building-gear fs-1 text-primary"></i>
+    </div>
+</div>
+
+
+    <!-- SECTION TITLE -->
+    <div class="section-header mb-4">
+        <h5 class="text-uppercase fw-bold text-muted small">
+            Department Access
+        </h5>
+        <hr class="opacity-25">
+    </div>
+
+
+    <!-- DEPARTMENT GRID -->
+    <div class="departments-grid">
+
+        {% for dept in departments %}
+        {% cycle 'blue' 'green' 'orange' 'purple' as color silent %}
+
+        <div class="dept-card card-{{ color }} {% if dept == user_department %}active-dept shadow-sm{% else %}locked-dept{% endif %}">
+            
+            <div class="card-body p-4 d-flex flex-column">
+
+                <!-- ICON + STATUS -->
+                <div class="d-flex justify-content-between align-items-start mb-4">
+
+                    <div class="icon-box box-{{ color }} shadow-sm">
+                        <i class="bi bi-building-gear"></i>
+                    </div>
+
+                    {% if dept == user_department %}
+                        <span class="badge status-badge badge-{{ color }} px-3 py-2">
+                            <i class="bi bi-check-circle-fill me-1"></i>
+                            Authorized
+                        </span>
+                    {% else %}
+                        <div class="lock-circle opacity-50">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                    {% endif %}
+
+                </div>
+
+
+                <!-- DEPARTMENT DETAILS -->
+                <h4 class="dept-title fw-bold mb-2">
+                    {{ dept.name }}
+                </h4>
+
+                <p class="dept-desc text-muted mb-4">
+                    {{ dept.description|truncatewords:15 }}
+                </p>
+
+
+                <!-- ACTION BUTTON -->
+                <div class="mt-auto">
+
+                    {% if dept == user_department %}
+
+                        <a href="{% url 'department_detail' dept.id %}" 
+                           class="btn btn-{{ color }} w-100 py-3 fw-bold rounded-3">
+
+                           Launch Workspace
+                           <i class="bi bi-arrow-up-right-square ms-2"></i>
+
+                        </a>
+
+                    {% else %}
+
+                        <button class="btn btn-lock w-100 py-3 rounded-3" disabled>
+                            <small class="fw-semibold text-uppercase">
+                                Access Restricted
+                            </small>
+                        </button>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+       <!-- ADD DEPARTMENT CARD AS LINK -->
+<a href="{% url 'add_department' %}" class="dept-card card-blue d-flex align-items-center justify-content-center border-dashed hover-scale text-decoration-none">
+    <div class="d-flex flex-column align-items-center text-primary">
+        <i class="bi bi-plus-circle fs-1 mb-2"></i>
+        <span class="fw-bold">Add Department</span>
+    </div>
+</a>
+</div>
+
+    </div>
+
+</div>
+
+{% endblock %}
