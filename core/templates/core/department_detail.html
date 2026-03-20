@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="page-container">
+    <nav class="breadcrumb-nav mb-4">
+        <a href="{% url 'hr_dashboard' %}">Dashboard</a> 
+        <span class="mx-2 text-muted">/</span>
+        <a href="{% url 'hr_department' %}">Departments</a> 
+        <span class="mx-2 text-muted">/</span>
+        <span class="fw-bold text-dark">{{ department.name }}</span>
+    </nav>
+
+    <div class="dept-hero">
+        <div class="d-flex align-items-center gap-4">
+            <div class="dept-icon text-uppercase">{{ department.name|slice:":1" }}</div>
+            <div>
+                <span class="dept-code-pill mb-2 d-inline-block">{{ department.code }}</span>
+                <h1 class="fw-bold mb-1">{{ department.name }} Department</h1>
+                <div class="dept-meta d-flex gap-3">
+                    <span><i class="bi bi-geo-alt me-1 text-primary"></i> {{ department.location|default:"Main HQ" }}</span>
+                    <span><i class="bi bi-people me-1 text-primary"></i> {{ employees.count }} Members</span>
+                </div>
+            </div>
+        </div>
+      <<div class="dept-actions">
+    {% if user.role == 'admin' or user.role == 'hr' %}
+        <div class="d-flex gap-2">
+            <a href="{% url 'edit_department' department.id %}" class="btn btn-glass-edit">
+                <i class="bi bi-pencil-square me-2"></i> Edit Details
+            </a>
+
+            <form action="{% url 'delete_department' department.id %}" method="POST">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger" 
+            onclick="return confirm('Confirm permanent deletion of {{ department.name }}?')">
+        <i class="bi bi-trash"></i> Delete Department
+    </button>
+</form>
+        </div>
+    {% else %}
+        <span class="badge bg-light text-dark border px-3 py-2">
+            <i class="bi bi-info-circle me-1"></i> View Only
+        </span>
+    {% endif %}
+</div>
+    </div>
+
+    <div class="members-section mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0 text-dark">Team Directory</h4>
+            <button class="btn btn-primary btn-sm rounded-3 px-3"><i class="bi bi-plus-lg me-1"></i> Add Member</button>
+        </div>
+
+        <div class="member-list-wrapper">
+            <div class="member-row row-header">
+                <div>Employee Name</div>
+                <div>Position</div>
+                <div>System Status</div>
+                <div class="text-end">Actions</div>
+            </div>
+            {% for employee in employees %}
+            <div class="member-row">
+                <div class="member-info-main d-flex align-items-center gap-3">
+                    <div class="avatar-circle bg-primary-subtle text-primary fw-bold" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ employee.user.get_full_name }}</h6>
+                        <small class="text-muted">{{ employee.user.email }}</small>
+                    </div>
+                </div>
+                <div><span class="role-text">{{ employee.position }}</span></div>
+                <div>
+                    <span class="status-indicator {% if employee.user.is_active %}online{% endif %}"></span>
+                    <span class="small fw-medium">{{ employee.user.is_active|yesno:"Active,Inactive" }}</span>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-icon text-muted"><i class="bi bi-three-dots"></i></button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5"><p class="text-muted">No members assigned yet.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if user.role == 'admin' or user.role == 'hr' %}
+    <div class="attendance-section mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold m-0 text-dark">Today's Attendance</h4>
+                <small class="text-primary fw-semibold"><i class="bi bi-shield-lock me-1"></i> HR Management View</small>
+            </div>
+            <span class="badge bg-white text-dark border px-3 py-2 rounded-pill">{% now "l, F j" %}</span>
+        </div>
+
+        <div class="attendance-list-wrapper">
+            <div class="member-row row-header">
+                <div>Employee</div>
+                <div>Status</div>
+                <div>Check-in Time</div>
+                <div class="text-end">History</div>
+            </div>
+
+            {% for item in attendance_data %}
+            <div class="member-row">
+                <div class="member-info-main d-flex align-items-center gap-3">
+                    <div class="avatar-circle bg-light text-secondary fw-bold" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        {{ item.employee.user.first_name|slice:":1" }}{{ item.employee.user.last_name|slice:":1" }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ item.employee.user.username }}</h6>
+                        <small class="text-muted">{{ item.employee.position }}</small>
+                    </div>
+                </div>
+
+                <div>
+                    {% if item.is_present %}
+                        <span class="status-pill status-present"><i class="bi bi-check-circle-fill"></i> Present</span>
+                    {% else %}
+                        <span class="status-pill status-absent"><i class="bi bi-x-circle-fill"></i> Absent</span>
+                    {% endif %}
+                </div>
+
+                <div class="text-muted small fw-medium">
+                    <i class="bi bi-clock me-1"></i> {{ item.check_in_time|default:"--:--" }}
+                </div>
+
+                <div class="text-end">
+                    <button class="btn btn-sm btn-outline-secondary border-0">View Log</button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5"><p class="text-muted">No data for today.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

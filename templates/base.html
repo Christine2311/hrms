@@ -17,32 +17,52 @@
 </head>
 <body>
 
-    {% if user.is_authenticated %}
-        {% if user.role == 'admin' or user.role == 'employee' %}
-            {% include 'navbar/admin_employee.html' %}
-        {% endif %}
-    {% endif %}
+    {% if user.is_authenticated and user.role in 'admin hr employee' %}
+    {% include 'navbar/admin_employee.html' %}
+{% endif %}
 
     <div class="app-container">
-        {% if user.is_authenticated %}
-        <aside class="sidebar">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a href="{% url 'employee_dashboard' %}" class="nav-link">
-                        <i class="bi bi-grid-1x2-fill"></i> <span class="link-text">Dashboard</span>
-                    </a>
-                </li>
+      {% if user.is_authenticated %}
+<aside class="sidebar">
+    <ul class="nav flex-column">
 
-                {% if user.role == 'admin' %}
+        <!-- Dashboard link changes depending on role -->
+        <li class="nav-item">
+            {% if user.role == 'hr' %}
+                <a href="{% url 'hr_dashboard' %}" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span class="link-text">Dashboard</span>
+                </a>
+
+            {% elif user.role == 'admin' %}
+                <a href="{% url 'hr_dashboard' %}" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span class="link-text">Dashboard</span>
+                </a>
+
+            {% else %}
+                <a href="{% url 'employee_dashboard' %}" class="nav-link">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span class="link-text">Dashboard</span>
+                </a>
+            {% endif %}
+        </li>
+
+        
+
+                {% if user.role == 'admin' or user.role == 'hr' %}
                     <div class="sidebar-heading">Admin</div>
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-people-fill"></i> <span class="link-text">User Directory</span></a>
+                        <a href="{% url 'analytics' %}" class="nav-link"><i class="bi bi-bar-chart-line-fill"></i> <span class="link-text">Analytics</span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-chat-left-dots-fill"></i> <span class="link-text">Leave Inquiries</span></a>
+                        <a href="{% url 'user_management' %}" class="nav-link"><i class="bi bi-people-fill"></i> <span class="link-text">User Directory</span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-bar-chart-line-fill"></i> <span class="link-text">Analytics</span></a>
+                        <a href="{% url 'review_tickets' %}" class="nav-link"><i class="bi bi-chat-left-dots-fill"></i> <span class="link-text">Leave Inquiries/Complaints</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'hr_department' %}" class="nav-link"><i class="bi bi-person-circle"></i> <span class="link-text">Departments</span></a>
                     </li>
 
                 {% elif user.role == 'employee' %}
@@ -51,10 +71,10 @@
                         <a href="{% url 'profile' %}" class="nav-link"><i class="bi bi-person-circle"></i> <span class="link-text">My Profile</span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-calendar-plus"></i> <span class="link-text">Request Leave</span></a>
+                        <a href="{% url 'ticket_list' %}" class="nav-link"><i class="bi bi-calendar-plus"></i> <span class="link-text">Request Leave/Complaints</span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link"><i class="bi bi-building-fill"></i> <span class="link-text">My Department</span></a>
+                        <a href="{% url 'department_detail' user.employee.department.id %}" class="nav-link"><i class="bi bi-building-fill"></i> <span class="link-text">My Department</span></a>
                     </li>
                 {% endif %}
 
@@ -69,6 +89,23 @@
 
         <main class="dashboard-wrapper">
             <div class="container-fluid">
+              {% if messages %}
+                    <div class="pt-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 10px;">
+                                <div class="d-flex align-items-center">
+                                    {% if message.tags == 'error' %}
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {% else %}
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                    {% endif %}
+                                    <strong>{{ message }}</strong>
+                                </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 
                 <div class="mb-3">
                     <h2 class="welcome-text">{% block page_subtitle %}{% endblock %}</h2>

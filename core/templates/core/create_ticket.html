@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Applying your .ticket-card class here -->
+            <div class="ticket-card shadow-sm p-4">
+                <h3 class="fw-bold mb-4">Submit a Request</h3>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <!-- Category Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">What would you like to do?</label>
+                        <select name="category" id="ticket-category" class="form-select form-select-lg" onchange="toggleRequestFields()">
+                            <option value="leave">Apply for Leave</option>
+                            <option value="complaint">File a Complaint</option>
+                            <option value="other">OTHER</option>
+                        </select>
+                    </div>
+
+                    <!-- Date Section (Visible by default for Leave) -->
+                    <div id="date-section" class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Start Date</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">End Date</label>
+                            <input type="date" name="end_date" class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Details</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="State your reason or complaint here..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleRequestFields() {
+    // Get the dropdown and the date section by their new synced IDs
+    const category = document.getElementById("ticket-category").value;
+    const dateSection = document.getElementById("date-section");
+
+    if (category === "leave") {
+        dateSection.style.display = "flex"; 
+    } else {
+        dateSection.style.display = "none";
+    }
+}
+
+// Run it once on load in case 'leave' is auto-selected
+window.onload = toggleRequestFields;
+</script>
+{% endblock %}

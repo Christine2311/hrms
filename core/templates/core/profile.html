@@ -1,79 +1,71 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
+{% load static %}
 
-{% block header_title %}Employee Profile{% endblock %}
+{% block page_subtitle %}User Profile{% endblock %}
 
 {% block content %}
-<main class="profile-page">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="dept-card active-dept mb-4 shadow-sm">
-                    <div class="card-body text-center">
-                        <div class="avatar avatar--large active mb-3" style="width: 120px; height: 120px; margin: 0 auto;">
-                            <img src="https://randomuser.me/api/portraits/men/11.jpg" class="rounded-circle img-fluid border border-4 border-white shadow" />
-                        </div>
-                        
-                        <h3 class="fw-bold">{{ user.first_name }} {{ user.last_name }}</h3>
-                        <p class="text-primary fw-bold">@{{ user.username }}</p>
-                        <span class="badge bg-light text-primary px-3 py-2 rounded-pill mb-3 border">
-                            {{ user.role|upper }}
-                        </span>
-
-                        {% if request.user == user %}
-                        <div class="mt-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm rounded-pill px-4">
-                                <i class="bi bi-pencil-square me-2"></i>Edit Profile
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
+<div class="profile-container p-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden text-center p-4 mb-4">
+                <div class="profile-avatar-large mx-auto bg-primary text-white mb-3 d-flex align-items-center justify-content-center" 
+                     style="width: 100px; height: 100px; border-radius: 50%; font-size: 2.5rem; font-weight: 800;">
+                    {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
                 </div>
-
-                <div class="dept-card shadow-sm border-blue">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3">About Me</h5>
-                        <p class="text-muted small">
-                            {{ user.bio|default:"No bio available. HR information for this employee is kept confidential and managed by the HRMS CORE system." }}
-                        </p>
-                        <hr>
-                        <div class="small">
-                            <p class="mb-1"><strong>Department:</strong> {{ user.department.name }}</p>
-                            <p class="mb-1"><strong>Joined:</strong> {{ user.date_joined|date:"M Y" }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-8">
-                <div class="roomList__header d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="fw-bold m-0">Department Workspace</h4>
-                </div>
-
-                <div class="departments-grid mb-4">
-                    <div class="dept-card border-green shadow-sm">
-                        <div class="card-body">
-                            <h6>Assigned Tasks</h6>
-                            <h2 class="fw-bold text-success">12</h2>
-                            <small class="text-muted">4 pending review</small>
-                        </div>
-                    </div>
-                    <div class="dept-card border-purple shadow-sm">
-                        <div class="card-body">
-                            <h6>Leave Balance</h6>
-                            <h2 class="fw-bold text-purple">18 Days</h2>
-                            <small class="text-muted">Available this year</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="dept-card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3">Recent Activity</h5>
-                        {% include 'core/feed_component.html' %} 
-                    </div>
+                <h4 class="fw-bold mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                <p class="text-muted small mb-3">@{{ user.username }}</p>
+                <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill text-uppercase">
+                    {{ user.role }}
+                </span>
+                <hr class="my-4 opacity-50">
+                <div class="text-start">
+                    <p class="mb-2"><strong>Email:</strong> <br><span class="text-muted">{{ user.email }}</span></p>
+                    <p class="mb-0"><strong>Joined:</strong> <br><span class="text-muted">{{ user.date_joined|date:"M d, Y" }}</span></p>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold m-0">Account Settings</h4>
+                    <i class="bi bi-shield-lock text-muted"></i>
+                </div>
+
+                <form method="POST" action="{% url 'update_user' %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">First Name</label>
+                            <input type="text" name="first_name" class="form-control rounded-3" value="{{ user.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Last Name</label>
+                            <input type="text" name="last_name" class="form-control rounded-3" value="{{ user.last_name }}">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold">Email Address</label>
+                            <input type="email" name="email" class="form-control rounded-3" value="{{ user.email }}">
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Department</label>
+                            <input type="text" class="form-control rounded-3 bg-light" value="{{ user.employee.department.name|default:'Unassigned' }}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Position</label>
+                            <input type="text" class="form-control rounded-3 bg-light" value="{{ user.employee.position|default:'Staff' }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-bold">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-</main>
-{% endblock content %}
+</div>
+{% endblock %}

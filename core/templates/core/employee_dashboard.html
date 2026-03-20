@@ -6,33 +6,48 @@
 
 <div class="dashboard-wrapper pt-5">
 
-
-   <!-- DASHBOARD INTRO -->
-<div class="dashboard-intro mb-5 p-4 rounded-4 shadow-sm bg-white border-start border-4 border-primary d-flex flex-column flex-md-row justify-content-between align-items-center">
-    
-    <!-- Left: Welcome text -->
+<div class="dashboard-intro mb-5 p-4 rounded-3 shadow-sm bg-white d-flex flex-column flex-md-row justify-content-between align-items-center gap-4">
     <div class="mb-3 mb-md-0">
         <h2 class="fw-bold text-dark mb-2">
-            Welcome back, {{ user.first_name }}! 
+            Welcome back, {{ user.username }}! 
         </h2>
 
-        <p class="text-muted fs-5 mb-1">
+        <p class="text-black fs-5 mb-1">
             You are currently assigned to the 
             <span class="text-primary fw-semibold">
-                {{ user.department.name }}
+                {{ employee.department.name }}
             </span> department.
         </p>
 
-        <p class="text-secondary fs-6">
-            Here's a quick glance at your departments and access status. 
+        <p class="text-secondary fs-6 mb-0">
+            {% if already_checked_in %}
+                <span class="text-success fw-bold"><i class="bi bi-check2-all"></i> Your attendance is recorded for today.</span>
+            {% else %}
+                Please remember to mark your attendance for today.
+            {% endif %}
+        </p> 
     </div>
 
-    <!-- Right: Icon or illustration -->
-    <div class="d-none d-md-block">
-        <i class="bi bi-building-gear fs-1 text-primary"></i>
+    <div class="attendance-action">
+        {% if already_checked_in %}
+            <div class="p-3 rounded-3 text-center" style="background: #f0fdf4; border: 1px solid #bbf7d0; min-width: 200px;">
+                <i class="bi bi-calendar-check fs-2 text-success"></i>
+                <div class="text-success fw-bold small text-uppercase mt-1">Checked In</div>
+            </div>
+        {% else %}
+            <form action="{% url 'check_in' %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary px-4 py-3 shadow-sm d-flex align-items-center gap-2 rounded-3 hover-lift">
+                    <i class="bi bi-geo-alt-fill fs-4"></i>
+                    <div class="text-start">
+                        <span class="d-block fw-bold">Check In</span>
+                        <small class="opacity-75" style="font-size: 0.7rem;">{% now "H:i A" %}</small>
+                    </div>
+                </button>
+            </form>
+        {% endif %}
     </div>
 </div>
-
 
     <!-- SECTION TITLE -->
     <div class="section-header mb-4">
@@ -60,7 +75,7 @@
                         <i class="bi bi-building-gear"></i>
                     </div>
 
-                    {% if dept == user_department %}
+                    {% if dept == employee_department %}
                         <span class="badge status-badge badge-{{ color }} px-3 py-2">
                             <i class="bi bi-check-circle-fill me-1"></i>
                             Authorized
@@ -87,7 +102,7 @@
                 <!-- ACTION BUTTON -->
                 <div class="mt-auto">
 
-                    {% if dept == user_department %}
+                    {% if dept == employee_department %}
 
                         <a href="{% url 'department_detail' dept.id %}" 
                            class="btn btn-{{ color }} w-100 py-3 fw-bold rounded-3">
@@ -114,13 +129,7 @@
         </div>
 
         {% endfor %}
-       <!-- ADD DEPARTMENT CARD AS LINK -->
-<a href="{% url 'add_department' %}" class="dept-card card-blue d-flex align-items-center justify-content-center border-dashed hover-scale text-decoration-none">
-    <div class="d-flex flex-column align-items-center text-primary">
-        <i class="bi bi-plus-circle fs-1 mb-2"></i>
-        <span class="fw-bold">Add Department</span>
-    </div>
-</a>
+      
 </div>
 
     </div>

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="mb-4">
+    {% if user.role == 'employee' %}
+        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to My History
+        </a>
+    {% else %}
+        <a href="{% url 'review_tickets' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Review List
+        </a>
+    {% endif %}
+</div>
+
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            
+            <a href="{% url 'ticket_list' %}" class="btn btn-link text-decoration-none mb-3 p-0">
+                <i class="bi bi-arrow-left"></i> Back to History
+            </a>
+
+            <div class="card border-0 shadow-sm mb-4 rounded-4 overflow-hidden">
+                <div class="p-4 {% if ticket.status == 'approved' %}bg-success{% elif ticket.status == 'rejected' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-uppercase small fw-bold opacity-75">Ticket #{{ ticket.id }}</span>
+                            <h2 class="mb-0 fw-bold">{{ ticket.get_status_display }}</h2>
+                        </div>
+                        <i class="bi {% if ticket.status == 'approved' %}bi-check-circle{% elif ticket.status == 'rejected' %}bi-x-circle{% else %}bi-clock-history{% endif %} fs-1"></i>
+                    </div>
+                </div>
+                
+                <div class="card-body bg-white border-bottom">
+                    <div class="row text-center">
+                        <div class="col border-end">
+                            <small class="text-muted d-block">Category</small>
+                            <span class="fw-bold">{{ ticket.get_category_display }}</span>
+                        </div>
+                        <div class="col">
+                            <small class="text-muted d-block">Submitted</small>
+                            <span class="fw-bold">{{ ticket.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <h5 class="fw-bold mb-3 border-bottom pb-2">Request Details</h5>
+                
+                <div class="mb-4">
+                    <h6 class="text-primary fw-bold">{{ ticket.subject }}</h6>
+                    <p class="text-dark" style="line-height: 1.6;">{{ ticket.description }}</p>
+                
+
+                <hr> <!-- A visual line to separate the employee's text from the admin's -->
+
+    {% if ticket.admin_comment %}
+        <div class="admin-feedback-box p-3 rounded {% if ticket.status == 'rejected' %}bg-danger-subtle text-danger{% else %}bg-success-subtle text-success{% endif %}">
+            <h6 class="fw-bold">Response from HR:</h6>
+            <p class="mb-0 italic">"{{ ticket.admin_comment }}"</p>
+        </div>
+    {% endif %}
+</div>
+                {% if ticket.category == 'leave' %}
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <div class="row text-center">
+                        <div class="col">
+                            <small class="text-muted d-block">Start Date</small>
+                            <span class="fw-bold text-primary">{{ ticket.start_date }}</span>
+                        </div>
+                        <div class="col">
+                            <small class="text-muted d-block">End Date</small>
+                            <span class="fw-bold text-primary">{{ ticket.end_date }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if ticket.admin_comment %}
+                <div class="alert {% if ticket.status == 'rejected' %}alert-danger{% else %}alert-info{% endif %} border-0 rounded-3 mt-2">
+                    <h6 class="fw-bold"><i class="bi bi-chat-left-text-fill me-2"></i> HR Response:</h6>
+                    <p class="mb-0 italic">"{{ ticket.admin_comment }}"</p>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}Company Structure{% endblock %}
+
+{% block content %}
+<div class="page-container">
+
+    <div class="page-header d-flex justify-content-between align-items-center">
+        <h2>Departments</h2>
+        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+            Total: {{ departments.count }}
+        </span>
+    </div>
+
+    <div class="department-grid">
+
+        {% for department in departments %}
+        <a href="{% url 'department_detail' department.id %}" class="department-card">
+            <div class="department-info">
+                <div class="d-flex justify-content-between">
+                    <h4>{{ department.name }}</h4>
+                    <i class="bi bi-arrow-right-short text-muted fs-4"></i>
+                </div>
+                <p>{{ department.description|truncatechars:80|default:"No description provided for this department." }}</p>
+            </div>
+
+            <div class="employee-badge">
+                <i class="bi bi-people-fill"></i>
+                {{ department.employees.count }} Team Members
+            </div>
+        </a>
+        
+        {% endfor %}
+
+        <a href="{% url 'add_department' %}" class="add-department-card">
+            <div>
+                <i class="bi bi-plus-circle fs-2 d-block mb-2"></i>
+                Add New Department
+            </div>
+        </a>
+
+    </div>
+
+</div>
+{% endblock %}

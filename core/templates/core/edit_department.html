@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="page-container">
+    <nav class="breadcrumb-nav mb-4">
+        <a href="{% url 'hr_dashboard' %}">Dashboard</a> 
+        <span class="mx-2 text-muted">/</span>
+        <a href="{% url 'hr_department' %}">Departments</a> 
+        <span class="mx-2 text-muted">/</span>
+        <a href="{% url 'department_detail' department.id %}">{{ department.name }}</a>
+        <span class="mx-2 text-muted">/</span>
+        <span class="fw-bold text-dark">Edit</span>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="p-4 bg-primary text-white d-flex align-items-center gap-3">
+                    <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                        <i class="bi bi-pencil-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="fw-bold mb-0">Edit Department</h3>
+                        <p class="mb-0 opacity-75 small">Modifying details for {{ department.name }}</p>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 bg-white">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="row g-4">
+                            {% for field in form %}
+                            <div class="col-md-{% if field.name == 'description' %}12{% else %}6{% endif %}">
+                                <label class="form-label fw-bold small text-muted text-uppercase">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors|first }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
+                            <a href="{% url 'department_detail' department.id %}" class="btn btn-light px-4 rounded-3 text-muted">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 rounded-3 fw-bold">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling the Django form inputs to match your theme */
+    .form-control, .form-select {
+        border-radius: 10px;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        background-color: #f8f9fa;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus {
+        background-color: #fff;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+</style>
+{% endblock %}

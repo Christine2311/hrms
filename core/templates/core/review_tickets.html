@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}HR Review Center{% endblock %}
+
+{% block content %}
+<div class="container review-container py-5">
+    <h2 class="fw-bold mb-4">Pending Requests</h2>
+
+    {% for ticket in tickets %}
+    <div class="review-card mb-3 p-4 bg-white shadow-sm rounded-3 {% if ticket.status == 'pending' %}border-start border-warning border-4{% endif %}">
+        <div class="row align-items-center">
+            
+            <div class="col-md-3">
+                <div class="d-flex align-items-center">
+                    <div class="avatar-circle me-3 bg-primary text-white d-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; font-weight: bold;">
+                        {{ ticket.employee.user.first_name|slice:":1" }}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold">{{ ticket.employee.user.get_full_name }}</h6>
+                        <small class="text-muted text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">{{ ticket.get_category_display }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <p class="mb-1 text-dark"><strong>{{ ticket.subject }}</strong></p>
+                <p class="small text-muted mb-0">{{ ticket.description|truncatechars:100 }}</p>
+                
+                {% if ticket.category == 'leave' %}
+                    <span class="badge bg-light text-primary border mt-2">
+                        <i class="bi bi-calendar-event me-1"></i> {{ ticket.start_date }} to {{ ticket.end_date }}
+                    </span>
+                {% endif %}
+            </div>
+<div class="col-md-4 text-end">
+                {% if ticket.status == 'pending' %}
+                    <form method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                        <input type="hidden" name="status" value="approved">
+                        <button type="submit" class="btn btn-success btn-sm px-3 fw-bold">Approve</button>
+                    </form>
+
+                    <button type="button" class="btn btn-danger btn-sm px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#rejectModal{{ ticket.id }}">
+                        Reject
+                    </button>
+                {% else %}
+                    <span class="badge rounded-pill px-3 py-2 border {% if ticket.status == 'approved' %}bg-success-subtle text-success border-success{% else %}bg-danger-subtle text-danger border-danger{% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                {% endif %}
+            </div> 
+        </div> <div class="modal fade" id="rejectModal{{ ticket.id }}" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" data-bs-backdrop="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg text-start">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title fw-bold">Reject Request</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <p class="text-muted small">Provide a reason for rejecting <strong>{{ ticket.employee.user.get_full_name }}'s</strong> request.</p>
+                            <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                            <input type="hidden" name="status" value="rejected">
+                            
+                            <label class="form-label small fw-bold text-uppercase">Reason for Rejection</label>
+                            <textarea name="admin_comment" class="form-control" rows="4" placeholder="e.g., Lack of coverage..." required></textarea>
+                        </div>
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger px-4">Confirm Rejection</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
+         {% endfor %}
+{% endblock %}
