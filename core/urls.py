@@ -32,4 +32,9 @@ urlpatterns = [
     path('notifications/mark-read/', views.mark_all_notifications_read, name='mark_all_read'),
     path('department/edit/<int:dept_id>/', views.edit_department, name='edit_department'),
     path('department/delete/<int:dept_id>/', views.delete_department, name='delete_department'),
+    
+    path('attendance/history/<int:employee_id>/', views.employee_attendance_log, name='attendance_log'),
+    path('tasks/<int:task_id>/complete/', views.complete_task, name='complete_task'),
+    path('tasks/create/', views.create_task, name='create_task'),
+    
 ]

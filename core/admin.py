@@ -2,6 +2,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import CustomUser, Department, Employee, Notification
+from .models import Task
 
 # ------------------------------
 # CUSTOM USER ADMIN
@@ -32,3 +33,11 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(Department)
 admin.site.register(Employee)
 admin.site.register(Notification)  
+
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ('title', 'department', 'assigned_to', 'status', 'due_date')
+    list_filter = ('status', 'department')
+    search_fields = ('title', 'description')

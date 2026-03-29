@@ -10,9 +10,12 @@ from django.utils import timezone
 from django.db.models import Count
 
 
+import datetime
+
+
 from django.contrib.auth.hashers import make_password
 
-from .models import CustomUser, Attendance, Ticket
+from .models import CustomUser, Attendance, Task, Ticket
 from .models import Department, Employee, Notification
 from .decorators import role_required
 # Create your views here.
@@ -158,11 +161,9 @@ def hr_dashboard(request):
 
 
 def mark_all_notifications_read(request):
-    # This finds all unread notifications for the logged-in user and updates them
-    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-    
-    # Redirect the user back to wherever they were
-    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+    # This uses 'read' which matches your model
+    Notification.objects.filter(user=request.user, read=False).update(read=True)
+    return redirect(request.META.get('HTTP_REFERER', 'hr_dashboard'))
 
 
 def profile_view(request):
@@ -210,54 +211,63 @@ def user_management(request):
         user_id = request.POST.get('user_id')
         target_user = CustomUser.objects.filter(id=user_id).first()
 
+        # 1. CREATE USER
         if action == 'create_user':
             username = request.POST['username']
             email = request.POST['email']
             password = request.POST['password']
             role = request.POST['role']
             dept_id = request.POST.get('department')
-           
 
             if CustomUser.objects.filter(username=username).exists():
                 messages.error(request, 'Username already exists.')
             else:
                 new_user = CustomUser.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password,
-                    role=role
+                    username=username, email=email, password=password, role=role
                 )
                 department = Department.objects.filter(id=dept_id).first() if dept_id else None
                 Employee.objects.create(user=new_user, department=department)
-                
                 messages.success(request, f'User {username} created.')
 
+        # 2. UPDATE ROLE
         elif action == 'update_role' and target_user:
             role = request.POST.get('role')
             target_user.role = role
             target_user.save()
             messages.success(request, f'Updated role for {target_user.username}.')
 
+        # 3. UPDATE DEPARTMENT
         elif action == 'update_department' and target_user:
-         dept_id = request.POST.get('department')
-         dept = Department.objects.filter(id=dept_id).first() if dept_id else None
+            dept_id = request.POST.get('department')
+            dept = Department.objects.filter(id=dept_id).first() if dept_id else None
+            employee, created = Employee.objects.get_or_create(user=target_user)
+            employee.department = dept
+            employee.save()
+            messages.success(request, f'Updated department for {target_user.username}.')
 
-    # Update or create Employee record
-         employee, created = Employee.objects.get_or_create(user=target_user)
-         employee.department = dept
-         employee.save()
-
-         messages.success(request, f'Updated department for {target_user.username}.')
+        # 4. TOGGLE STATUS
         elif action == 'toggle_approval' and target_user:
             target_user.is_active = not target_user.is_active
             target_user.save()
             messages.success(request, f'Toggled status for {target_user.username}.')
 
+        # 5. DELETE USER (Moved this inside the POST block)
+        elif action == 'delete_user':
+            # Use target_user which we already looked up at the top
+            if not target_user:
+                messages.error(request, "User not found.")
+            elif target_user == request.user:
+                messages.error(request, "You cannot delete your own account.")
+            else:
+                username = target_user.username
+                target_user.delete()
+                messages.success(request, f"User '{username}' has been permanently deleted.")
+
+        # This redirect handles all POST actions
         return redirect('user_management')
 
+    # This handles the initial GET request to view the page
     return render(request, 'core/user_management.html', {'users': users, 'departments': departments})
-
-
 
 @role_required(['admin', 'hr'])
 def add_department(request):
@@ -274,10 +284,9 @@ def add_department(request):
 
     return render(request, 'core/add_department.html', {'form': form})
 
-
 @role_required(['admin', 'hr', 'employee'])
 def department_detail(request, pk=None):
-    # 1. Determine Department
+    # 1. Determine the Department
     if request.user.role in ['admin', 'hr']:
         department = get_object_or_404(Department, pk=pk)
     else: 
@@ -286,43 +295,84 @@ def department_detail(request, pk=None):
             return redirect('employee_dashboard')
         department = request.user.employee.department
 
+    # 2. Get the People and the Work (Available to Everyone)
     employees = department.employees.all()
+    tasks = Task.objects.filter(department=department).order_by('due_date')
+
     context = {
         'department': department,
         'employees': employees,
+        'tasks': tasks,
     }
 
-    # 2. Attendance Logic (Refined for your specific Model)
+    # 3. Attendance Logic (Only for Admin/HR)
     if request.user.role in ['admin', 'hr']:
         today = timezone.now().date()
         
-        # We filter based on the 'user_id' because your Attendance model 
-        # links to 'User', not the 'Employee' profile.
+        # We get the User IDs from the Employee profiles in this department
         user_ids = employees.values_list('user_id', flat=True)
+        
+        # Filter attendance where the 'employee' field (which is a User) matches our list
         today_attendance = Attendance.objects.filter(
             date=today, 
             employee_id__in=user_ids
         )
 
-        # Map { User_ID : Attendance_Object }
+        # Create a dictionary for quick lookup: { user_id: attendance_record }
         attendance_dict = {a.employee_id: a for a in today_attendance}
 
         attendance_data = []
         for emp in employees:
-            # We look up the record using the ID of the User attached to the Employee
             record = attendance_dict.get(emp.user.id)
             
             attendance_data.append({
                 'employee': emp,
-                'is_present': record is not None,
+                'is_present': record is not None and record.status == 'present',
                 'status': record.get_status_display() if record else "Absent",
-                # Using your actual model field name: check_in_time
-                'check_in_time': record.check_in_time.strftime("%H:%M") if record else None
+                # record.check_in_time is a TimeField, so we format it directly
+                'check_in_time': record.check_in_time.strftime("%H:%M") if record and record.check_in_time else "--:--"
             })
         
         context['attendance_data'] = attendance_data
 
     return render(request, 'core/department_detail.html', context)
+
+@role_required(['admin', 'hr'])
+def create_task(request):
+    if request.method == "POST":
+        dept_id = request.POST.get('department_id')
+        emp_id = request.POST.get('assigned_to')
+        
+        department = get_object_or_404(Department, id=dept_id)
+        employee = get_object_or_404(Employee, id=emp_id)
+        
+        Task.objects.create(
+            title=request.POST.get('title'),
+            description=request.POST.get('description'),
+            department=department,
+            assigned_to=employee,
+            due_date=request.POST.get('due_date'),
+            status='pending'
+        )
+        messages.success(request, "New task assigned successfully!")
+        return redirect('department_detail', pk=dept_id)
+
+
+def complete_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+    
+    # Security Check: Only the assigned employee can mark it as done
+    # (Or an Admin/HR)
+    if task.assigned_to.user == request.user or request.user.role in ['admin', 'hr']:
+        task.status = 'completed'
+        task.save()
+        messages.success(request, f"Task '{task.title}' marked as completed!")
+    else:
+        messages.error(request, "You are not authorized to complete this task.")
+        
+    # Redirect back to the department detail page
+    return redirect('department_detail', pk=task.department.id)
+
 
 @role_required(['admin', 'hr'])
 def edit_department(request, dept_id):
@@ -376,12 +426,32 @@ def delete_department(request, dept_id):
     # 5. If someone tries to visit the URL via GET, send them back
     return redirect('department_detail', pk=dept_id)
 
+
+
+
 @role_required(['admin', 'hr'])  
 def hr_department(request):
+    # 1. Fetch the counts for the stats grid
+    total_employees = Employee.objects.count()
+    total_departments = Department.objects.count()
+    
+    # 2. Tickets (Matching your template variable names)
+    pending_tickets_count = Ticket.objects.filter(status__iexact='pending').count()
+    
+    # 3. Notifications (Assuming you have a Notification model)
+    # We filter for unread notifications for the logged-in user
+    unread_notifications = Notification.objects.filter(user=request.user,read=False).order_by('-created_at')
+
+    # 4. Departments list (if you use it elsewhere in the page)
     departments = Department.objects.all()
 
     context = {
-        'departments': departments
+        'departments': departments,
+        'total_employees': total_employees,
+        'total_departments': total_departments,
+        'pending_tickets': pending_tickets_count, # Used in the highlight card
+        'tickets': pending_tickets_count,         # Used in the stats grid
+        'unread_notifications': unread_notifications,
     }
 
     return render(request, 'core/hr_department.html', context)
@@ -443,9 +513,9 @@ def analytics_view(request):
 
 @role_required(['employee'])
 def ticket_list(request):
-    tickets = Ticket.objects.filter(status='pending').order_by('-created_at')
+    # This filters by the logged-in user's employee profile instead of just status
+    tickets = Ticket.objects.filter(employee__user=request.user).order_by('-created_at')
     return render(request, 'core/ticket_list.html', {'tickets': tickets})
-
 
 @role_required(['admin', 'hr'])
 def review_tickets(request):
@@ -505,3 +575,32 @@ def ticket_detail(request, ticket_id):
         ticket = get_object_or_404(Ticket, id=ticket_id, employee__user=request.user)
         
     return render(request, 'core/ticket_detail.html', {'ticket': ticket})
+
+
+
+
+
+@role_required(['admin', 'hr', 'employee'])
+def employee_attendance_log(request, employee_id):
+    # 1. Get the Employee object
+    employee_obj = get_object_or_404(Employee, id=employee_id)
+    
+    # 2. Safety Check (Prevent employees from seeing others)
+    if request.user.role == 'employee' and request.user != employee_obj.user:
+        messages.error(request, "Unauthorized access.")
+        return redirect('employee_dashboard')
+
+    
+    
+    # Use this if 'employee' is actually a link to the User account
+    history = Attendance.objects.filter(employee=employee_obj.user).order_by('-date')
+    
+    
+
+    clock_in_deadline = datetime.time(9, 0)
+    
+    return render(request, 'core/attendance_log.html', {
+        'employee': employee_obj,
+        'history': history,
+        'clock_in_deadline': clock_in_deadline
+    })

@@ -90,22 +90,23 @@
         <main class="dashboard-wrapper">
             <div class="container-fluid">
               {% if messages %}
-                    <div class="pt-3">
-                        {% for message in messages %}
-                            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 10px;">
-                                <div class="d-flex align-items-center">
-                                    {% if message.tags == 'error' %}
-                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    {% else %}
-                                        <i class="bi bi-check-circle-fill me-2"></i>
-                                    {% endif %}
-                                    <strong>{{ message }}</strong>
-                                </div>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
+    <div class="message-container animate-fade-in">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show custom-alert" role="alert">
+                <div class="d-flex align-items-center">
+                    {% if message.tags == 'error' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {% else %}
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                    {% endif %}
+                    <div>{{ message }}</div>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+                  
                 
                 <div class="mb-3">
                     <h2 class="welcome-text">{% block page_subtitle %}{% endblock %}</h2>

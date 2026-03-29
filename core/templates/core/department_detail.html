@@ -1,140 +1,261 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="page-container">
+<div class="page-container mt-4">
     <nav class="breadcrumb-nav mb-4">
-        <a href="{% url 'hr_dashboard' %}">Dashboard</a> 
-        <span class="mx-2 text-muted">/</span>
-        <a href="{% url 'hr_department' %}">Departments</a> 
-        <span class="mx-2 text-muted">/</span>
-        <span class="fw-bold text-dark">{{ department.name }}</span>
+        <div class="container-fluid">
+            <a href="{% url 'hr_dashboard' %}" class="text-decoration-none">Dashboard</a> 
+            <span class="mx-2 text-muted">/</span>
+            <a href="{% url 'hr_department' %}" class="text-decoration-none">Departments</a> 
+            <span class="mx-2 text-muted">/</span>
+            <span class="fw-bold text-dark">{{ department.name }}</span>
+        </div>
     </nav>
 
-    <div class="dept-hero">
-        <div class="d-flex align-items-center gap-4">
-            <div class="dept-icon text-uppercase">{{ department.name|slice:":1" }}</div>
-            <div>
-                <span class="dept-code-pill mb-2 d-inline-block">{{ department.code }}</span>
-                <h1 class="fw-bold mb-1">{{ department.name }} Department</h1>
-                <div class="dept-meta d-flex gap-3">
-                    <span><i class="bi bi-geo-alt me-1 text-primary"></i> {{ department.location|default:"Main HQ" }}</span>
-                    <span><i class="bi bi-people me-1 text-primary"></i> {{ employees.count }} Members</span>
+    <div class="container-fluid mb-5">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="row g-0">
+                    <div class="col-auto bg-primary" style="width: 8px;"></div>
+                    
+                    <div class="col p-4">
+                        <div class="row align-items-center">
+                            <div class="col-lg-8 d-flex align-items-center gap-4">
+                                <div class="flex-shrink-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
+                                     style="width: 70px; height: 70px; font-size: 28px; font-weight: 800;">
+                                    {{ department.name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <h1 class="fw-bold h2 mb-0">{{ department.name }} Department</h1>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3">
+                                            {{ department.code }}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-3 text-muted small mt-2">
+                                        <span><i class="bi bi-geo-alt-fill text-primary"></i> {{ department.location|default:"Headquarters" }}</span>
+                                        <span><i class="bi bi-people-fill text-primary"></i> {{ employees.count }} Members</span>
+                                        <span><i class="bi bi-calendar-check-fill text-primary"></i> Last Updated: {% now "M Y" %}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                                {% if user.role == 'admin' or user.role == 'hr' %}
+                                    <div class="d-flex gap-2 justify-content-lg-end">
+                                        <a href="{% url 'edit_department' department.id %}" class="btn btn-outline-primary btn-sm rounded-pill px-4 py-2 fw-bold">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </a>
+                                        <form action="{% url 'delete_department' department.id %}" method="POST" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm rounded-pill px-4 py-2 fw-bold" onclick="return confirm('Permanently delete this department?')">
+                                                <i class="bi bi-trash me-1"></i> Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border p-3 rounded-pill fw-medium">
+                                        <i class="bi bi-shield-check me-2 text-success"></i>Authorized Access
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-      <<div class="dept-actions">
-    {% if user.role == 'admin' or user.role == 'hr' %}
-        <div class="d-flex gap-2">
-            <a href="{% url 'edit_department' department.id %}" class="btn btn-glass-edit">
-                <i class="bi bi-pencil-square me-2"></i> Edit Details
-            </a>
-
-            <form action="{% url 'delete_department' department.id %}" method="POST">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger" 
-            onclick="return confirm('Confirm permanent deletion of {{ department.name }}?')">
-        <i class="bi bi-trash"></i> Delete Department
-    </button>
-</form>
-        </div>
-    {% else %}
-        <span class="badge bg-light text-dark border px-3 py-2">
-            <i class="bi bi-info-circle me-1"></i> View Only
-        </span>
-    {% endif %}
-</div>
     </div>
 
-    <div class="members-section mb-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold m-0 text-dark">Team Directory</h4>
-            <button class="btn btn-primary btn-sm rounded-3 px-3"><i class="bi bi-plus-lg me-1"></i> Add Member</button>
+    <div class="container-fluid mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h4 class="fw-bold m-0"><i class="bi bi-kanban me-2 text-primary"></i>Task Board</h4>
+            </div>
+            {% if user.role == 'admin' or user.role == 'hr' %}
+                <button type="button" class="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#assignTaskModal">
+                    <i class="bi bi-plus-lg me-1"></i> New Task
+                </button>
+            {% endif %}
         </div>
 
-        <div class="member-list-wrapper">
-            <div class="member-row row-header">
-                <div>Employee Name</div>
-                <div>Position</div>
-                <div>System Status</div>
-                <div class="text-end">Actions</div>
-            </div>
-            {% for employee in employees %}
-            <div class="member-row">
-                <div class="member-info-main d-flex align-items-center gap-3">
-                    <div class="avatar-circle bg-primary-subtle text-primary fw-bold" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        {{ employee.user.first_name|slice:":1" }}{{ employee.user.last_name|slice:":1" }}
+        <div class="row g-4">
+            {% for task in tasks %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 border-top border-4 {% if task.status == 'completed' %}border-success{% else %}border-warning{% endif %}">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-3 align-items-center">
+                                <span class="badge {% if task.status == 'completed' %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %} rounded-pill px-3">
+                                    {{ task.get_status_display }}
+                                </span>
+                                <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ task.due_date|date:"M d" }}</small>
+                            </div>
+                            <h6 class="fw-bold mb-2">{{ task.title }}</h6>
+                            <p class="text-muted small mb-4">{{ task.description|truncatechars:90 }}</p>
+                            
+                            <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-auto">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar-circle bg-light text-primary fw-bold" style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; border: 1px solid #eee;">
+                                        {{ task.assigned_to.user.first_name|slice:":1" }}
+                                    </div>
+                                    <span class="small fw-medium">
+                                        {% if task.assigned_to.user == request.user %}
+                                            <span class="text-primary">You</span>
+                                        {% else %}
+                                            {{ task.assigned_to.user.first_name }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                {% if task.status != 'completed' %}
+                                    {% if task.assigned_to.user == request.user or user.role == 'admin' or user.role == 'hr' %}
+                                        <form method="POST" action="{% url 'complete_task' task.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success rounded-pill px-3 fw-bold">Done</button>
+                                        </form>
+                                    {% endif %}
+                                {% else %}
+                                    <i class="bi bi-check-all text-success fs-4"></i>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold">{{ employee.user.get_full_name }}</h6>
-                        <small class="text-muted">{{ employee.user.email }}</small>
-                    </div>
                 </div>
-                <div><span class="role-text">{{ employee.position }}</span></div>
-                <div>
-                    <span class="status-indicator {% if employee.user.is_active %}online{% endif %}"></span>
-                    <span class="small fw-medium">{{ employee.user.is_active|yesno:"Active,Inactive" }}</span>
-                </div>
-                <div class="text-end">
-                    <button class="btn btn-icon text-muted"><i class="bi bi-three-dots"></i></button>
-                </div>
-            </div>
             {% empty %}
-            <div class="text-center py-5"><p class="text-muted">No members assigned yet.</p></div>
+                <div class="col-12 text-center py-5 bg-white rounded-4 shadow-sm border border-dashed">
+                    <p class="text-muted mb-0">No active tasks found for this department.</p>
+                </div>
             {% endfor %}
         </div>
     </div>
 
-    {% if user.role == 'admin' or user.role == 'hr' %}
-    <div class="attendance-section mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold m-0 text-dark">Today's Attendance</h4>
-                <small class="text-primary fw-semibold"><i class="bi bi-shield-lock me-1"></i> HR Management View</small>
+    <div class="container-fluid mb-5">
+        <h4 class="fw-bold mb-4"><i class="bi bi-people me-2 text-primary"></i>Team Directory</h4>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 border-0">Employee</th>
+                            <th class="py-3 border-0">Role</th>
+                            <th class="py-3 border-0">Status</th>
+                            <th class="px-4 py-3 border-0 text-end">Contact</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-circle bg-primary-subtle text-primary fw-bold" style="width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        {{ employee.user.full_name|slice:":1" }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold small">{{ employee.user.username }}</div>
+                                        <div class="text-muted" style="font-size: 11px;">{{ employee.user.email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small fw-medium">{{ employee.position }}</td>
+                            <td>
+                                <span class="badge {% if employee.user.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %} rounded-pill px-2" style="font-size: 10px;">
+                                    {{ employee.user.is_active|yesno:"ACTIVE,INACTIVE" }}
+                                </span>
+                            </td>
+                            <td class="px-4 text-end">
+                                <a href="mailto:{{ employee.user.email }}" class="btn btn-sm btn-light border rounded-circle"><i class="bi bi-envelope"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+        </div>
+    </div>
+
+    {% if user.role == 'admin' or user.role == 'hr' %}
+    <div class="container-fluid mb-5 pt-4 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold m-0 text-dark">Today's Attendance</h4>
             <span class="badge bg-white text-dark border px-3 py-2 rounded-pill">{% now "l, F j" %}</span>
         </div>
 
-        <div class="attendance-list-wrapper">
-            <div class="member-row row-header">
-                <div>Employee</div>
-                <div>Status</div>
-                <div>Check-in Time</div>
-                <div class="text-end">History</div>
-            </div>
-
-            {% for item in attendance_data %}
-            <div class="member-row">
-                <div class="member-info-main d-flex align-items-center gap-3">
-                    <div class="avatar-circle bg-light text-secondary fw-bold" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        {{ item.employee.user.first_name|slice:":1" }}{{ item.employee.user.last_name|slice:":1" }}
-                    </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold">{{ item.employee.user.username }}</h6>
-                        <small class="text-muted">{{ item.employee.position }}</small>
-                    </div>
-                </div>
-
-                <div>
-                    {% if item.is_present %}
-                        <span class="status-pill status-present"><i class="bi bi-check-circle-fill"></i> Present</span>
-                    {% else %}
-                        <span class="status-pill status-absent"><i class="bi bi-x-circle-fill"></i> Absent</span>
-                    {% endif %}
-                </div>
-
-                <div class="text-muted small fw-medium">
-                    <i class="bi bi-clock me-1"></i> {{ item.check_in_time|default:"--:--" }}
-                </div>
-
-                <div class="text-end">
-                    <button class="btn btn-sm btn-outline-secondary border-0">View Log</button>
-                </div>
-            </div>
-            {% empty %}
-            <div class="text-center py-5"><p class="text-muted">No data for today.</p></div>
-            {% endfor %}
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small">
+                    <tr>
+                        <th class="px-4 py-3 border-0">Name</th>
+                        <th class="py-3 border-0 text-center">Status</th>
+                        <th class="py-3 border-0">Check-in</th>
+                        <th class="px-4 py-3 border-0 text-end">Logs</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in attendance_data %}
+                    <tr>
+                        <td class="px-4 py-3 fw-bold small">{{ item.employee.user.username }}</td>
+                        <td class="text-center">
+                            {% if item.is_present %}
+                                <i class="bi bi-check-circle-fill text-success" title="Present"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle-fill text-danger" title="Absent"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted small">{{ item.check_in_time|default:"--:--" }}</td>
+                        <td class="px-4 text-end">
+                            <a href="{% url 'attendance_log' item.employee.id %}" class="btn btn-sm btn-outline-secondary border-0">
+                                <i class="bi bi-list-ul"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
     {% endif %}
 </div>
+
+{% if user.role == 'admin' or user.role == 'hr' %}
+<div class="modal fade" id="assignTaskModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white p-4">
+                <h5 class="modal-title fw-bold">Assign Task: {{ department.name }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{% url 'create_task' %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <input type="hidden" name="department_id" value="{{ department.id }}">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Task Title</label>
+                        <input type="text" name="title" class="form-control form-control-lg fs-6" placeholder="What needs to be done?" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Assign To</label>
+                        <select name="assigned_to" class="form-select" required>
+                            <option value="" selected disabled>Select Member...</option>
+                            {% for employee in employees %}
+                                <option value="{{ employee.id }}">{{ employee.user.get_full_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Due Date</label>
+                        <input type="date" name="due_date" class="form-control" required>
+                    </div>
+                    <div class="mb-0">
+                        <label class="form-label small fw-bold">Instructions</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Optional details..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

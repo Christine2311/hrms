@@ -131,3 +131,31 @@ class Ticket(models.Model):
     def __str__(self):
         # This helper method uses the 'Human Readable' name from the choices
         return f"{self.get_category_display()} - {self.employee.user.username}"
+    
+
+
+
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    
+    # Links the task to a specific Department
+    department = models.ForeignKey('Department', on_delete=models.CASCADE, related_name='tasks')
+    
+    # Links the task to the Employee doing the work
+    assigned_to = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='assigned_tasks')
+    
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    due_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.assigned_to.user.username}"
