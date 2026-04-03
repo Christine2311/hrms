@@ -7,6 +7,7 @@ User = settings.AUTH_USER_MODEL
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'HR / Admin'),
+        ('manager', 'Department Manager'),
         ('employee', 'Employee'),
     )
 
@@ -90,6 +91,7 @@ class Attendance(models.Model):
     employee = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateField()
     check_in_time = models.TimeField(auto_now_add=True)
+    is_present = models.BooleanField(default=False) # ADD THIS LINE
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     
     class Meta:
@@ -127,6 +129,8 @@ class Ticket(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     admin_comment = models.TextField(null=True, blank=True, help_text="Reason for rejection or approval notes")
+    
+    is_confidential = models.BooleanField(default=False, help_text="Hide from Department Managers")
 
     def __str__(self):
         # This helper method uses the 'Human Readable' name from the choices

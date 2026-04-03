@@ -3,63 +3,69 @@
 {% block content %}
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">My Request History</h2>
-        <!-- Link back to your form page -->
-        <a href="{% url 'create_ticket' %}" class="btn btn-primary">+ New Request</a>
+        <div>
+            <h2 class="fw-bold mb-0">Ticket History</h2>
+            <p class="text-muted">Track and manage your requests and departmental filings.</p>
+        </div>
+        <a href="{% url 'create_ticket' %}" class="btn btn-primary shadow-sm">+ New Request</a>
     </div>
    
     <div class="row">
         {% for ticket in tickets %}
         <div class="col-12 mb-3">
-            <!-- This is the card that holds the info -->
-            <div class="ticket-card shadow-sm p-3 bg-white rounded border-start border-4 
+            <div class="ticket-card shadow-sm p-4 bg-white rounded border-start border-4 
                 {% if ticket.status == 'pending' %}border-warning
                 {% elif ticket.status == 'approved' %}border-success
                 {% else %}border-danger{% endif %}">
                 
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h5 class="fw-bold mb-1">{{ ticket.subject|default:"Untitled Request" }}</h5>
-                        <p class="text-muted small mb-0">{{ ticket.get_category_display }} • Submitted on {{ ticket.created_at|date:"M d, Y" }}</p>
+                        <div class="d-flex align-items-center mb-1">
+                            <span class="badge bg-light text-dark border me-2">#{{ ticket.id }}</span>
+                            <h5 class="fw-bold mb-0">{{ ticket.subject|default:"Untitled Request" }}</h5>
+                            
+                            {% if ticket.is_confidential %}
+                                <span class="ms-2 badge bg-dark text-white"><i class="bi bi-eye-slash"></i> Confidential</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="text-muted small mb-0">
+                            <strong>{{ ticket.employee.user.get_full_name|default:ticket.employee.user.username }}</strong> 
+                            • {{ ticket.get_category_display }} 
+                            • Submitted {{ ticket.created_at|date:"M d, Y" }}
+                        </p>
                     </div>
-                    <div>
-                        <span class="badge {% if ticket.status == 'pending' %}bg-warning{% elif ticket.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
-                            {{ ticket.status|upper }}
+
+                    <div class="text-end">
+                        <span class="badge rounded-pill {% if ticket.status == 'pending' %}bg-warning text-dark{% elif ticket.status == 'approved' %}bg-success text-white{% else %}bg-danger text-white{% endif %} px-3">
+                            {{ ticket.get_status_display|upper }}
                         </span>
+                        <div class="mt-2">
+                            <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-sm btn-link text-primary p-0">
+                                View Details →
+                            </a>
+                        </div>
                     </div>
-                    <!-- THIS IS THE PART TO ADD -->
-    {% if ticket.status == 'rejected' and ticket.admin_comment %}
-        <div class="mt-3 p-2 bg-light rounded border-start border-danger border-3">
-            <small class="text-danger fw-bold d-block">Reason for Rejection:</small>
-            <p class="small mb-0 text-muted">{{ ticket.admin_comment }}</p>
-        </div>
-    {% elif ticket.status == 'approved' and ticket.admin_comment %}
-        <div class="mt-3 p-2 bg-light rounded border-start border-success border-3">
-            <small class="text-success fw-bold d-block">Admin Note:</small>
-            <p class="small mb-0 text-muted">{{ ticket.admin_comment }}</p>
-        </div>
-    {% endif %}
                 </div>
-            
 
-                <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-sm btn-outline-primary">
-    View Full Details
-</a>
-
-                <!-- DISPLAY THE REASON HERE IF REJECTED -->
-                {% if ticket.status == 'rejected' and ticket.admin_comment %}
-                <div class="mt-3 p-2 bg-light rounded border-start border-danger border-3">
-                    <small class="text-danger fw-bold d-block">Reason for Rejection:</small>
-                    <p class="small mb-0 text-dark">{{ ticket.admin_comment }}</p>
-                </div>
+                {% if ticket.admin_comment %}
+                    <div class="mt-3 p-3 bg-light rounded border-start border-3 
+                        {% if ticket.status == 'rejected' %}border-danger{% else %}border-success{% endif %}">
+                        <small class="fw-bold d-block mb-1 
+                            {% if ticket.status == 'rejected' %}text-danger{% else %}text-success{% endif %}">
+                            Admin Feedback:
+                        </small>
+                        <p class="small mb-0 text-dark italic">"{{ ticket.admin_comment }}"</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
         {% empty %}
-        <p class="text-center text-muted">You haven't submitted any requests yet.</p>
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="text-muted mt-2">No tickets found in this category.</p>
+        </div>
         {% endfor %}
-
-
     </div>
 </div>
 {% endblock %}

@@ -347,6 +347,10 @@ h2 {
     color: white;
 }
 
+.role-badge-manager {
+    background-color: #8b5cf6 !important; /* Purple */
+    color: white;
+}
 
 
 /* Badges */

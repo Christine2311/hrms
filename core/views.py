@@ -9,6 +9,9 @@ from .forms import DepartmentForm
 from django.utils import timezone
 from django.db.models import Count
 
+from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Q
+
 
 import datetime
 
@@ -25,6 +28,7 @@ def signupForm(request):
         first_name = request.POST.get('first_name')
         last_name  = request.POST.get('last_name')
         username   = request.POST.get('username')
+        email      = request.POST.get('email')
         password   = request.POST.get('password')
         password2  = request.POST.get('password2')  # confirm password
 
@@ -42,11 +46,12 @@ def signupForm(request):
         user = CustomUser.objects.create_user(
             username=username,
             password=password,
+            email=email,
             first_name=first_name,
             last_name=last_name,
             role='employee',   # default role
             is_staff=False,
-            is_active=True
+            is_active=False
         )
         user.save()
 
@@ -61,16 +66,27 @@ def login_view(request):
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
+
         if user is not None:
-            auth_login(request, user)
-            if user.role == 'employee':
-                return redirect('employee_dashboard')
-            elif user.role == 'admin':
-                return redirect('hr_dashboard')
+            # 🛡️ THE GATEKEEPER CHECK: Is the account active/approved?
+            if user.is_active:
+                auth_login(request, user)
+                
+                # Redirect based on role
+                if user.role in ['employee', 'manager']:
+                    return redirect('employee_dashboard')
+                elif user.role == 'admin':
+                    return redirect('hr_dashboard')
+            else:
+                # ❌ Account exists, but Admin hasn't checked the box yet
+                messages.warning(request, 'Your account is pending Admin approval. Please contact HR.')
+                return render(request, 'core/login.html')
         else:
-         messages.error(request, 'Invalid credentials')
-        return render(request, 'core/login.html')
-    return render(request, 'core/login.html')  # Render the login template
+            # ❌ Wrong username or password
+            messages.error(request, 'Invalid credentials')
+            return render(request, 'core/login.html')
+
+    return render(request, 'core/login.html')
 
 
 def root_redirect(request):
@@ -81,7 +97,7 @@ def root_redirect(request):
     - Not logged in -> login
     """
     if request.user.is_authenticated:
-        if request.user.role == 'employee':
+        if request.user.role == 'employee' or request.user.role == 'manager':
             return redirect('employee_dashboard')
         elif request.user.role == 'admin':
             return redirect('hr_dashboard')
@@ -93,27 +109,34 @@ def logout_view(request):
     return redirect('login')  # Redirect to login after logout
 
 
-
-
+@role_required(['employee', 'manager']) # Admin is excluded here
 def employee_dashboard(request):
     user = request.user
 
+    # 1. Fetch the Profile (Required for Managers and Employees to Clock In)
     try:
-        employee = Employee.objects.get(user=user)
-        employee_department = employee.department
+        employee_profile = Employee.objects.get(user=user)
+        employee_department = employee_profile.department
     except Employee.DoesNotExist:
-        employee = None
+        # This handles cases where a user exists but doesn't have a profile yet
+        employee_profile = None
         employee_department = None
 
-    departments = Department.objects.all()  # all available departments
+    # 2. Shared Data: Visible to both roles
+    departments = Department.objects.all() 
     unread_notifications = Notification.objects.filter(user=user, read=False)
+    
+    # 3. Shared Action: Daily Attendance Check
     today = timezone.now().date()
-    # Check if a record already exists for this user today
-    already_checked_in = Attendance.objects.filter(employee=request.user, date=today).exists()
+    already_checked_in = False
+    if employee_profile:  # Ensure we have a profile before checking attendance
+        # We use the 'employee' profile object to check the record
+        already_checked_in = Attendance.objects.filter(employee=user, date=today).exists()
 
     context = {
         'user': user,
-        'employee': employee,
+        'role': user.role, # 'employee' or 'manager'
+        'employee_profile': employee_profile,
         'employee_department': employee_department,
         'departments': departments,
         'unread_notifications': unread_notifications,
@@ -125,14 +148,27 @@ def employee_dashboard(request):
 
 def check_in(request):
     user = request.user
-    today = timezone.now().date()
+    # Ensure we are using Nairobi time for the date check too!
+    now_nairobi = timezone.localtime(timezone.now())
+    today = now_nairobi.date()
 
-    Attendance.objects.get_or_create(
+    attendance, created = Attendance.objects.get_or_create(
         employee=user,
-        date=today,
-        defaults={'status': 'present'}
+        date=today
     )
 
+    # 1. Update the Boolean for the HTML badge
+    attendance.is_present = True 
+    
+    # 2. Update the Status string (if you use it elsewhere)
+    attendance.status = 'present' 
+    
+    # 3. Record the local Nairobi time
+    attendance.check_in_time = now_nairobi.time() 
+    
+    attendance.save()
+    
+    messages.success(request, f"Checked in successfully at {now_nairobi.strftime('%H:%M %p')}")
     return redirect('employee_dashboard')
 
 
@@ -284,18 +320,71 @@ def add_department(request):
 
     return render(request, 'core/add_department.html', {'form': form})
 
-@role_required(['admin', 'hr', 'employee'])
+@role_required(['employee', 'manager'])
+def employee_dashboard(request):
+    user = request.user
+    today = timezone.now().date()
+
+    # 1. Fetch the Job Profile (Grace and Employees need this)
+    try:
+        employee_profile = Employee.objects.get(user=user)
+        employee_department = employee_profile.department
+    except Employee.DoesNotExist:
+        employee_profile = None
+        employee_department = None
+
+    # 2. Universal Data (Notifications & Dept List)
+    departments = Department.objects.all() 
+    unread_notifications = Notification.objects.filter(user=user, read=False)
+    
+    # 3. Universal Action: Daily Attendance Check
+    already_checked_in = False
+    if employee_profile:
+        # FIX: Your Attendance model uses 'employee' as a FK to User
+        # So we pass 'user' here, not 'employee_profile'
+        already_checked_in = Attendance.objects.filter(
+            employee=user, 
+            date=today
+        ).exists()
+
+    context = {
+        'user': user,
+        'role': user.role,
+        'employee_profile': employee_profile,
+        'employee_department': employee_department,
+        'departments': departments,
+        'unread_notifications': unread_notifications,
+        'already_checked_in': already_checked_in,
+    }
+
+    return render(request, 'core/employee_dashboard.html', context)
+
+
+@role_required(['admin', 'hr', 'employee', 'manager'])
 def department_detail(request, pk=None):
-    # 1. Determine the Department
-    if request.user.role in ['admin', 'hr']:
+    user = request.user
+    
+    # 1. Determine & Secure the Department
+    if user.role in ['admin', 'hr']:
+        # Admins can see any department via the URL PK
         department = get_object_or_404(Department, pk=pk)
     else: 
-        if not hasattr(request.user, 'employee'):
+        # Managers and Employees are locked to their own department
+        if not hasattr(user, 'employee'):
             messages.error(request, "Employee profile not found.")
             return redirect('employee_dashboard')
-        department = request.user.employee.department
+        
+        user_dept = user.employee.department
+        
+        # Security: If a Manager tries to type a different PK in the URL, block them
+        if pk and int(pk) != user_dept.pk:
+            messages.error(request, "Access Denied: You can only view your own department.")
+            return redirect('employee_dashboard')
+            
+        department = user_dept
 
-    # 2. Get the People and the Work (Available to Everyone)
+    # 2. Fetch Core Department Data
+    # Assumes 'employees' is the related_name on the Employee model
     employees = department.employees.all()
     tasks = Task.objects.filter(department=department).order_by('due_date')
 
@@ -305,20 +394,20 @@ def department_detail(request, pk=None):
         'tasks': tasks,
     }
 
-    # 3. Attendance Logic (Only for Admin/HR)
-    if request.user.role in ['admin', 'hr']:
+    # 3. Attendance Reporting (Logic for Admin, HR, and Managers)
+    if user.role in ['admin', 'hr', 'manager']:
         today = timezone.now().date()
         
-        # We get the User IDs from the Employee profiles in this department
+        # Map Employee profiles to their User IDs for the Attendance query
         user_ids = employees.values_list('user_id', flat=True)
         
-        # Filter attendance where the 'employee' field (which is a User) matches our list
+        # Get all attendance records for this department today in one query
         today_attendance = Attendance.objects.filter(
             date=today, 
             employee_id__in=user_ids
         )
 
-        # Create a dictionary for quick lookup: { user_id: attendance_record }
+        # Dictionary for O(1) lookup speed: { user_id: attendance_object }
         attendance_dict = {a.employee_id: a for a in today_attendance}
 
         attendance_data = []
@@ -327,17 +416,16 @@ def department_detail(request, pk=None):
             
             attendance_data.append({
                 'employee': emp,
-                'is_present': record is not None and record.status == 'present',
+                'is_present': record is not None,
                 'status': record.get_status_display() if record else "Absent",
-                # record.check_in_time is a TimeField, so we format it directly
-                'check_in_time': record.check_in_time.strftime("%H:%M") if record and record.check_in_time else "--:--"
+                'check_in_time': record.check_in_time.strftime("%H:%M") if record else "--:--"
             })
         
         context['attendance_data'] = attendance_data
 
     return render(request, 'core/department_detail.html', context)
 
-@role_required(['admin', 'hr'])
+@role_required(['admin', 'hr', 'manager'])
 def create_task(request):
     if request.method == "POST":
         dept_id = request.POST.get('department_id')
@@ -363,7 +451,7 @@ def complete_task(request, task_id):
     
     # Security Check: Only the assigned employee can mark it as done
     # (Or an Admin/HR)
-    if task.assigned_to.user == request.user or request.user.role in ['admin', 'hr']:
+    if task.assigned_to.user == request.user or request.user.role in ['admin', 'hr', 'manager']:
         task.status = 'completed'
         task.save()
         messages.success(request, f"Task '{task.title}' marked as completed!")
@@ -374,7 +462,7 @@ def complete_task(request, task_id):
     return redirect('department_detail', pk=task.department.id)
 
 
-@role_required(['admin', 'hr'])
+@role_required(['admin', 'hr', 'manager'])
 def edit_department(request, dept_id):
     department = get_object_or_404(Department, id=dept_id)
     
@@ -399,7 +487,7 @@ def edit_department(request, dept_id):
 
 
 
-@role_required(['admin', 'hr'])
+@role_required(['admin', 'hr', 'manager'])
 def delete_department(request, dept_id):
     # 1. Fetch the department
     department = get_object_or_404(Department, id=dept_id)
@@ -511,7 +599,7 @@ def analytics_view(request):
 
     
 
-@role_required(['employee'])
+@role_required(['employee', 'manager'])
 def ticket_list(request):
     # This filters by the logged-in user's employee profile instead of just status
     tickets = Ticket.objects.filter(employee__user=request.user).order_by('-created_at')
@@ -530,57 +618,95 @@ def review_tickets(request):
         ticket.save()
         messages.success(request, f"Ticket #{ticket.id} has been {new_status}.")
         
-    # Show pending tickets at the top, then others
-    tickets = Ticket.objects.all().order_by('status', '-created_at')
+    # SHREWD ORDERING: Force 'pending' to the top
+    tickets = Ticket.objects.all().annotate(
+        priority=Case(
+            When(status='pending', then=Value(1)),
+            When(status='approved', then=Value(2)),
+            When(status='rejected', then=Value(3)),
+            default=Value(4),
+            output_field=IntegerField(),
+        )
+    ).order_by('priority', '-created_at') # Priority first, then newest first
     return render(request, 'core/review_tickets.html', {'tickets': tickets})
 
 
-@role_required(['employee'])
+@role_required(['employee', 'manager'])
 def create_ticket(request):
+    # 1. HANDLE DATA SUBMISSION (POST)
     if request.method == 'POST':
-        # 1. Use the field names exactly as they are in your HTML form 'name' attributes
-        category = request.POST.get('category') 
+        category = request.POST.get('category')
+        subject = request.POST.get('subject') # From your new HTML input
+        description = request.POST.get('description')
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
-        description = request.POST.get('description')
 
-        # 2. Get the specific Employee object linked to this User
-        # This prevents the "Cannot assign User to Ticket.employee" error
-        employee_profile = request.user.employee 
+        # SHREWD PRIVACY LOGIC: Auto-flag complaints as confidential
+        is_confidential = True if category == 'complaint' else False
 
-        # 3. Create the ticket using the correct model fields
-        Ticket.objects.create(
-            employee=employee_profile,
-            category=category,
-            start_date=start_date if category == 'leave' else None,
-            end_date=end_date if category == 'leave' else None,
-            description=description,
-            status='pending' # Always start as pending
-        )
-        
-        messages.success(request, 'Your request has been submitted!')
-        return redirect('ticket_list') # Redirect to their history list
+        try:
+            # Get the profile for the logged-in user (Grace or Employee)
+            employee_profile = request.user.employee 
+            
+            # Create the record in the database
+            Ticket.objects.create(
+                employee=employee_profile,
+                category=category,
+                subject=subject,
+                description=description,
+                is_confidential=is_confidential,
+                # Only save dates if it's a leave request
+                start_date=start_date if category == 'leave' else None,
+                end_date=end_date if category == 'leave' else None,
+                status='pending'
+            )
+            
+            messages.success(request, 'Your request has been submitted successfully!')
+            return redirect('ticket_list') 
+            
+        except Employee.DoesNotExist:
+            messages.error(request, "Employee profile not found. Please contact HR.")
+            return redirect('employee_dashboard')
 
+    # 2. HANDLE PAGE LOAD (GET)
+    # This line MUST be outside the 'if' block to prevent the ValueError
     return render(request, 'core/create_ticket.html')
 
 
-@role_required(['admin', 'hr', 'employee'])
+
+
+@role_required(['admin', 'hr', 'employee', 'manager'])
 def ticket_detail(request, ticket_id):
-    # 1. Admin & HR can see everything
-    if request.user.role in ['admin', 'hr']:
+    user = request.user
+    
+    # 1. Admin & HR: Global Access
+    if user.role in ['admin', 'hr']:
         ticket = get_object_or_404(Ticket, id=ticket_id)
     
-    # 2. Employees can only see their own
+    # 2. Manager: Departmental Access (With Privacy Shield)
+    elif user.role == 'manager':
+        try:
+            # We need the Manager's department to filter their team's tickets
+            manager_dept = user.employee.department
+            
+            ticket = get_object_or_404(
+                Ticket, 
+                Q(id=ticket_id, employee__department=manager_dept, is_confidential=False) |
+                Q(id=ticket_id, employee__user=user) # Personal tickets are always visible
+            )
+        except Employee.DoesNotExist:
+            messages.error(request, "Manager profile not found.")
+            return redirect('employee_dashboard')
+    
+    # 3. Employee: Personal Access Only
     else:
-        ticket = get_object_or_404(Ticket, id=ticket_id, employee__user=request.user)
+        ticket = get_object_or_404(Ticket, id=ticket_id, employee__user=user)
         
     return render(request, 'core/ticket_detail.html', {'ticket': ticket})
 
 
 
-
-
-@role_required(['admin', 'hr', 'employee'])
+@role_required(['admin', 'hr', 'manager'])
 def employee_attendance_log(request, employee_id):
     # 1. Get the Employee object
     employee_obj = get_object_or_404(Employee, id=employee_id)
@@ -592,8 +718,9 @@ def employee_attendance_log(request, employee_id):
 
     
     
-    # Use this if 'employee' is actually a link to the User account
+    ## This works because we "dot walk" to the User instance attached to that profile
     history = Attendance.objects.filter(employee=employee_obj.user).order_by('-date')
+    
     
     
 

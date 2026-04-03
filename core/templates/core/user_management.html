@@ -44,6 +44,7 @@
                         <select id="role" name="role" class="form-select" required>
                             <option value="admin" class="role-badge-admin">Admin</option>
                             <option value="employee" class="role-badge-employee">Employee</option>
+                            <option value="manager" class="role-badge-manager">Manager</option>
                         </select>
                     </div>
                     <div class="col-md-3 mt-3">
@@ -88,7 +89,7 @@
     <td>{{ user.username }}</td>
     <td>{{ user.email }}</td>
     <td>
-        <span class="badge role-badge-{{ user.role|lower }}">
+        <span class="badge role-badge-{{ user.role|lower }}" >
             {{ user.role|capfirst }}
         </span>
     </td>
@@ -125,6 +126,8 @@
                             <input type="hidden" name="user_id" value="{{ user.id }}">
                             <button type="submit" name="role" value="admin" class="dropdown-item {% if user.role == 'admin' %}active{% endif %}">Admin</button>
                             <button type="submit" name="role" value="employee" class="dropdown-item {% if user.role == 'employee' %}active{% endif %}">Employee</button>
+                            <button type="submit" name="role" value="manager" class="dropdown-item {% if user.role == 'manager' %}active{% endif %}">Manager</button>
+                        </form>
                         </form>
                     </li>
                     <li><hr class="dropdown-divider"></li>

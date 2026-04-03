@@ -9,38 +9,40 @@
                 <h3 class="fw-bold mb-4">Submit a Request</h3>
                 
                 <form method="POST">
-                    {% csrf_token %}
-                    
-                    <!-- Category Selection -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">What would you like to do?</label>
-                        <select name="category" id="ticket-category" class="form-select form-select-lg" onchange="toggleRequestFields()">
-                            <option value="leave">Apply for Leave</option>
-                            <option value="complaint">File a Complaint</option>
-                            <option value="other">OTHER</option>
-                        </select>
-                    </div>
+    {% csrf_token %}
+    
+    <div class="mb-4">
+        <label class="form-label fw-bold text-primary">Subject / Summary</label>
+        <input type="text" name="subject" class="form-control form-control-lg" placeholder="e.g., Request for Annual Leave" required>
+    </div>
 
-                    <!-- Date Section (Visible by default for Leave) -->
-                    <div id="date-section" class="row mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">Start Date</label>
-                            <input type="date" name="start_date" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-bold">End Date</label>
-                            <input type="date" name="end_date" class="form-control">
-                        </div>
-                    </div>
+    <div class="mb-4">
+        <label class="form-label fw-bold">Type of Request</label>
+        <select name="category" id="ticket-category" class="form-select" onchange="toggleRequestFields()">
+            <option value="leave">Apply for Leave</option>
+            <option value="complaint">File a Complaint (Confidential)</option>
+            <option value="other">Other / General Request</option>
+        </select>
+    </div>
 
-                    <!-- Details Section -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Details</label>
-                        <textarea name="description" class="form-control" rows="4" placeholder="State your reason or complaint here..."></textarea>
-                    </div>
+    <div id="date-section" class="row mb-4">
+        <div class="col-md-6">
+            <label class="form-label small fw-bold">Start Date</label>
+            <input type="date" name="start_date" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small fw-bold">End Date</label>
+            <input type="date" name="end_date" class="form-control">
+        </div>
+    </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Submit Request</button>
-                </form>
+    <div class="mb-4">
+        <label class="form-label fw-bold">Full Details</label>
+        <textarea name="description" class="form-control" rows="4" placeholder="Explain your request in detail..." required></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm">Submit Request</button>
+</form>
             </div>
         </div>
     </div>

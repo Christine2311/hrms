@@ -1,7 +1,7 @@
 # core/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Department, Employee, Notification
+from .models import Attendance, CustomUser, Department, Employee, Notification
 from .models import Task
 
 # ------------------------------
@@ -33,6 +33,15 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(Department)
 admin.site.register(Employee)
 admin.site.register(Notification)  
+
+
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    # This makes the admin look professional for your supervisor
+    list_display = ('employee', 'date', 'check_in_time', 'is_present', 'status')
+    list_filter = ('date', 'status', 'is_present')
+    search_fields = ('employee__username', 'employee__first_name')
 
 
 
